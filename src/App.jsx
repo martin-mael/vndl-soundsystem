@@ -1,3 +1,7 @@
+import { lazy, Suspense } from 'react'
+
+const CabinetViewer = lazy(() => import('./components/CabinetViewer.jsx'))
+
 const DimLine = ({ className = '' }) => (
   <div className={`dimline ${className}`.trim()}>
     <span className="bar"></span>
@@ -183,6 +187,13 @@ export default function App() {
                 <strong>15 mm</strong> partout. Cohérence des cotes : 559 − 30 = 529 et 430 − 30 =
                 400 confirment le double-paroi de 15 mm.
               </p>
+
+              <h3>Vue 3D du caisson</h3>
+              <Suspense
+                fallback={<div className="viewer-fallback">Chargement de la vue 3D…</div>}
+              >
+                <CabinetViewer />
+              </Suspense>
 
               <h3>Liste de coupe — par caisson (15 mm)</h3>
               <div className="tablewrap">

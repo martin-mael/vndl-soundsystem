@@ -146,6 +146,48 @@ caption{caption-side:bottom;text-align:left;font-size:12px;color:var(--ink-mute)
 .specgrid .k{font-family:var(--mono);font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-mute);}
 .specgrid .v{font-family:var(--display);font-size:18px;font-weight:500;margin-top:3px;}
 
+/* ---------- 3D viewer ---------- */
+.viewer{margin:18px 0 8px;}
+.viewer-stage{
+  position:relative;
+  aspect-ratio:4/3;
+  width:100%;
+  border:1px solid var(--ink);
+  background:
+    radial-gradient(120% 120% at 50% 20%, var(--white) 0%, var(--paper-2) 100%);
+  overflow:hidden;
+  touch-action:none;
+}
+.viewer-stage canvas{display:block;width:100%;height:100%;}
+.viewer-controls{
+  position:absolute;top:12px;left:12px;right:12px;z-index:5;
+  display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;
+}
+.viewer-group{display:flex;gap:6px;flex-wrap:wrap;}
+.viewer-controls button{
+  font-family:var(--mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;
+  color:var(--ink);background:var(--white);border:1px solid var(--ink);
+  padding:7px 12px;cursor:pointer;border-radius:2px;line-height:1;
+}
+.viewer-controls button:hover{background:var(--paper);}
+.viewer-controls button.is-on{background:var(--blue-bright);color:var(--white);border-color:var(--blue-bright);}
+.dim3d{
+  font-family:var(--mono);font-size:11px;font-weight:700;color:var(--blue-bright);
+  background:rgba(250,248,243,0.82);padding:1px 4px;border-radius:2px;white-space:nowrap;
+  pointer-events:none;user-select:none;
+}
+.viewer-cap{
+  font-family:var(--mono);font-size:12px;color:var(--ink-mute);margin:8px 2px 0;max-width:72ch;
+}
+.viewer-fallback{
+  aspect-ratio:4/3;width:100%;border:1px solid var(--line);background:var(--white);
+  display:flex;align-items:center;justify-content:center;
+  font-family:var(--mono);font-size:13px;color:var(--ink-mute);margin:18px 0 8px;
+}
+@media(max-width:680px){
+  .viewer-stage{aspect-ratio:1/1;}
+}
+
 /* ---------- Callouts ---------- */
 .note{
   border-left:3px solid var(--ochre);background:var(--ochre-bg);

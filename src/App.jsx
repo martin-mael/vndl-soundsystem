@@ -2,6 +2,35 @@ import { lazy, Suspense } from 'react'
 import CutPlan from './components/CutPlan.jsx'
 
 const CabinetViewer = lazy(() => import('./components/CabinetViewer.jsx'))
+const HeadViewer = lazy(() => import('./components/HeadViewer.jsx'))
+
+// Pièces de coupe des têtes (CP 15 mm, dimensions internes du plan Celestion)
+const HEAD_PIECES = [
+  { name: 'Dessus / dessous', short: 'Dessus/dessous', w: 380, h: 300, qty: 2, color: '#d9c08a', fixed: true, trap: { front: 380, back: 274.5, depth: 278, curve: 22 } },
+  {
+    name: 'Façade',
+    w: 380,
+    h: 597,
+    qty: 1,
+    color: '#d2bd92',
+    fixed: true,
+    cutouts: [
+      { type: 'rect', w: 265, h: 165, dx: 0, dy: -185 },
+      { type: 'circle', d: 278, dx: 0, dy: 55 },
+      { type: 'circle', d: 75, dx: -100, dy: 238 },
+      { type: 'circle', d: 75, dx: 100, dy: 238 },
+    ],
+  },
+  { name: 'Arrière', w: 274.5, h: 597, qty: 1, color: '#e0cfa6', fixed: true },
+  { name: 'Flanc G/D', short: 'Flanc', w: 283, h: 597, qty: 2, color: '#cdb079', fixed: true },
+]
+const HEAD_EXTRAS = [
+  '4 × tubes d’évent Ø75 (ID) × 165 mm (2 par tête)',
+  'Filtre passif Celestion par tête : self 1,6 mH, self 0,16 mH, condos 10/8/3 µF, résistance 10 Ω 25 W',
+  'Pavillon H1-9040P, moteur 1″ CDX1-1425, 12″ TF1225, 4 T-nuts M5 / Ø297 PCD',
+]
+const HEAD_NOTE =
+  'Calepinage indicatif des 2 têtes (CP bouleau 15 mm, dimensions internes conservées du plan Celestion GA878). Dessus/dessous = trapèzes (380 av. → 274,5 arr., contour ocre = chute du flan rectangulaire). Façade : pavillon 265×165, HP Ø278, 2 évents Ø75. Flancs en biais débités droits (283 × 597). Cotes en mm.'
 
 const DimLine = ({ className = '' }) => (
   <div className={`dimline ${className}`.trim()}>
@@ -76,7 +105,7 @@ export default function App() {
         <div className="wrap">
           <div className="eyebrow">Dossier de construction · v1 · juin 2026</div>
           <h1>
-            Système son <span className="blueword">audiophile</span>, transportable en vélo cargo.
+            Système son <span className="blueword">haute-fidélité</span>, transportable en vélo cargo.
           </h1>
           <p className="lede">
             Deux subwoofers 15″ et deux têtes deux-voies, pilotés par DSP rackable, dimensionnés
@@ -113,7 +142,7 @@ export default function App() {
             <Section id="systeme" num="01" title="Le système en bref">
               <p>
                 Le projet réconcilie trois objectifs qui semblent contradictoires — qualité
-                « audiophile », niveau PA pour 100-150 personnes, et double usage scène / studio —
+                haute-fidélité, niveau PA pour 100-150 personnes, et double usage scène / studio —
                 grâce à une seule décision d'architecture : un{' '}
                 <strong>système actif multi-voies piloté par DSP</strong>. En maîtrisant le
                 filtrage, l'alignement, l'égalisation et la limitation en numérique, on obtient à la
@@ -329,6 +358,14 @@ export default function App() {
                 <strong>diamètre/longueur de l'évent</strong> des têtes viennent du PDF Celestion — à
                 relever avant de commander selfs et condensateurs.
               </Note>
+
+              <h3>Vue 3D de la tête</h3>
+              <Suspense fallback={<div className="viewer-fallback">Chargement de la vue 3D…</div>}>
+                <HeadViewer />
+              </Suspense>
+
+              <h3>Plan de coupe (calepinage)</h3>
+              <CutPlan pieces={HEAD_PIECES} battens={[]} extras={HEAD_EXTRAS} note={HEAD_NOTE} subs={2} />
             </Section>
 
             <Section id="pilotage" num="05" title="Pilotage & routage">
@@ -650,8 +687,7 @@ export default function App() {
                 </li>
                 <li>
                   Monter les caisses subs : coller baffle reculé + tablette d'évent + tasseaux
-                  d'angle ; <strong>monter le HP par l'arrière avant fermeture</strong> ; soigner
-                  l'étanchéité (joint mousse, congés de colle).
+                  d'angle ; soigner l'étanchéité (joint mousse, congés de colle).
                 </li>
                 <li>Monter les têtes : filtre passif, ouate, évent ; visser HP et moteur.</li>
                 <li>Finition : Warnex, poignées, coins, embases Speakon, grilles.</li>

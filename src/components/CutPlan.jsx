@@ -1,18 +1,20 @@
 import { useMemo, useState } from 'react'
 
 /*
-  Plan de coupe (calepinage) configurable des 2 caissons subwoofer.
-  Pièces issues de la liste de coupe du rapport (CP bouleau 15 mm) + renforts,
-  ×2 subs, nestées sur des plaques de taille réglable par un algorithme en
-  bandes (shelf first-fit decreasing). Rotation autorisée (grain non
-  contraignant). Tout se recalcule à la volée (plaques, chute…).
+  Plan de coupe (calepinage) configurable.
+  Générique : reçoit la liste des pièces (et tasseaux/extras) en props, les
+  expanse ×N caissons, et les neste sur des plaques de taille réglable par un
+  algorithme en bandes (shelf first-fit decreasing). Rotation autorisée sauf
+  pièces `fixed`. Recalcul à la volée (plaques, chute…).
+
+  Pièce : { name, short?, w, h, qty, color, fixed?, notch?, vent?, hole?,
+            trap?:{front,back}, cutouts?:[{type:'circle'|'rect',d|w,h,dx,dy}] }
 */
 
 const M = 8 // marge de rive
-const SUBS = 2 // nombre de caissons
-const S = 0.46 // px par mm pour l'affichage
-const PAD_L = 80 // marge gauche (règle verticale)
-const PAD_T = 52 // marge haute (règle horizontale)
+const S = 0.46 // px par mm
+const PAD_L = 80
+const PAD_T = 52
 
 const PRESETS = [
   { label: 'Standard 2440×1220', w: 2440, h: 1220 },
@@ -20,8 +22,8 @@ const PRESETS = [
   { label: 'Format 3050×1530', w: 3050, h: 1530 },
 ]
 
-// Pièces CP 15 mm par caisson (liste de coupe §3 + renforts)
-const PIECES = [
+// ---- Défauts : subwoofers (liste de coupe §3 + renforts) ----
+const SUB_PIECES = [
   { name: 'Dessus / dessous', w: 425, h: 600, qty: 2, color: '#d9c08a' },
   { name: 'Flanc G/D', w: 600, h: 529, qty: 2, color: '#cdb079', notch: true },
   { name: 'Arrière', w: 395, h: 529, qty: 1, color: '#e0cfa6' },
@@ -31,18 +33,16 @@ const PIECES = [
   { name: 'Renfort central', short: 'Renfort', w: 215, h: 100, qty: 1, color: '#c2a062' },
   { name: 'Goussets ×2', short: 'Gousset', w: 82, h: 82, qty: 2, color: '#b9975f', tri: true },
 ]
-
-// Tasseaux d'angle (baguettes 18 × 18) par caisson — débit linéaire séparé
-const BATTENS = [
+const SUB_BATTENS = [
   { name: 'Tasseaux verticaux arrière', len: 529, qty: 2 },
   { name: 'Renforts arrière haut/bas', len: 351, qty: 2 },
   { name: 'Tasseaux flanc haut/bas', len: 525, qty: 4 },
 ]
 
-function expand() {
+function expand(pieces, subs) {
   const items = []
-  for (const p of PIECES) {
-    for (let s = 0; s < SUBS; s++) {
+  for (const p of pieces) {
+    for (let s = 0; s < subs; s++) {
       for (let q = 0; q < p.qty; q++) {
         items.push({ ...p, key: `${p.name}-${s}-${q}` })
       }
@@ -75,14 +75,14 @@ function place(sheet, it, W, H, gap) {
   return false
 }
 
-function nest(W, H, gap) {
+function nest(pieces, subs, W, H, gap) {
   const usableW = W - 2 * M
   const usableH = H - 2 * M
-  const oriented = expand()
+  const oriented = expand(pieces, subs)
     .map((p) => {
+      if (p.fixed) return { ...p, fits: p.w <= usableW && p.h <= usableH }
       let w = Math.max(p.w, p.h)
       let h = Math.min(p.w, p.h)
-      // si trop large à plat mais tient debout en tournant la pièce
       if (w > usableW && w <= usableH && h <= usableW) {
         const t = w
         w = h
@@ -160,17 +160,34 @@ function Piece({ it }) {
   const long = Math.max(it.w, it.h)
   const short = Math.min(it.w, it.h)
   const label = it.short || it.name
-  const dimStr = `${long} × ${short}`
+  const dimStr = it.trap ? `${it.trap.front}/${it.trap.back} × ${it.h}` : `${long} × ${short}`
   const fit = (len, max) => Math.max(11, Math.min(max, Math.floor((it.w - 16) / (len * 0.6))))
   const nameFont = fit(label.length, 26)
-  const dimFont = fit(dimStr.length, 23)
+  const dimFont = fit(dimStr.length, 22)
   const gap = Math.min(nameFont, 16)
+  const off = it.trap ? (it.w - it.trap.back) / 2 : 0
+  // trapèze : arrière (étroit) en haut, avant (large) en bas ; bord avant éventuellement galbé
+  const frontY = it.trap ? it.y + (it.trap.depth ?? it.h) : 0
+  const apexY = it.trap ? it.y + it.h : 0
+  const ctrlY = it.trap ? frontY + 2 * (apexY - frontY) : 0
+  const trapPath = it.trap
+    ? `M ${it.x + off},${it.y} L ${it.x + it.w - off},${it.y} L ${it.x + it.w},${frontY} ` +
+      (it.trap.curve
+        ? `Q ${it.x + it.w / 2},${ctrlY} ${it.x},${frontY} `
+        : `L ${it.x},${frontY} `) +
+      'Z'
+    : ''
   return (
     <g>
-      <rect x={it.x} y={it.y} width={it.w} height={it.h} fill={it.color} stroke="#1C1A16" strokeWidth={1.4} vectorEffect="non-scaling-stroke" />
-      {it.tri && (
-        <line x1={it.x} y1={it.y + it.h} x2={it.x + it.w} y2={it.y} stroke="#1C1A16" strokeWidth={1.2} vectorEffect="non-scaling-stroke" />
+      {it.trap ? (
+        <>
+          <rect x={it.x} y={it.y} width={it.w} height={it.h} fill="#FAF8F3" stroke="#A85F18" strokeWidth={1} strokeDasharray="8 6" vectorEffect="non-scaling-stroke" />
+          <path d={trapPath} fill={it.color} stroke="#1C1A16" strokeWidth={1.4} vectorEffect="non-scaling-stroke" />
+        </>
+      ) : (
+        <rect x={it.x} y={it.y} width={it.w} height={it.h} fill={it.color} stroke="#1C1A16" strokeWidth={1.4} vectorEffect="non-scaling-stroke" />
       )}
+      {it.tri && <line x1={it.x} y1={it.y + it.h} x2={it.x + it.w} y2={it.y} stroke="#1C1A16" strokeWidth={1.2} vectorEffect="non-scaling-stroke" />}
       {it.notch && (
         <rect x={it.x + it.w - 20} y={it.y + 50} width={20} height={it.h - 100} fill="none" stroke="#A85F18" strokeWidth={1.2} strokeDasharray="10 7" vectorEffect="non-scaling-stroke" />
       )}
@@ -180,37 +197,37 @@ function Piece({ it }) {
       {it.hole && (
         <circle cx={cx} cy={cy} r={it.hole / 2} fill="none" stroke="#15366B" strokeWidth={1.4} strokeDasharray="12 8" vectorEffect="non-scaling-stroke" />
       )}
+      {it.cutouts?.map((c, i) =>
+        c.type === 'circle' ? (
+          <circle key={i} cx={cx + c.dx} cy={cy + c.dy} r={c.d / 2} fill="none" stroke="#15366B" strokeWidth={1.4} strokeDasharray="12 8" vectorEffect="non-scaling-stroke" />
+        ) : (
+          <rect key={i} x={cx + c.dx - c.w / 2} y={cy + c.dy - c.h / 2} width={c.w} height={c.h} fill="none" stroke="#15366B" strokeWidth={1.4} strokeDasharray="12 8" vectorEffect="non-scaling-stroke" />
+        ),
+      )}
       <text x={cx} y={cy - gap / 2} textAnchor="middle" fontSize={nameFont} fontWeight="700" fill="#1C1A16">
         {label}
       </text>
       <text x={cx} y={cy + gap} textAnchor="middle" fontSize={dimFont} fill="#15366B" fontFamily="monospace">
         {dimStr}
       </text>
-      {it.hole && (
-        <text x={cx} y={cy + 48} textAnchor="middle" fontSize="20" fill="#15366B" fontFamily="monospace">
-          Ø{String(it.hole).replace('.', ',')}
-        </text>
-      )}
     </g>
   )
 }
 
-export default function CutPlan() {
-  // valeurs brutes (saisie libre, on peut tout effacer)
+export default function CutPlan({ pieces = SUB_PIECES, battens = SUB_BATTENS, subs = 2, extras = [], note }) {
   const [wIn, setWIn] = useState('2440')
   const [hIn, setHIn] = useState('1220')
   const [gapIn, setGapIn] = useState('4')
 
-  // valeurs sécurisées pour le calcul uniquement
   const W = Math.max(1, parseInt(wIn, 10) || 0)
   const H = Math.max(1, parseInt(hIn, 10) || 0)
   const gap = Math.max(0, parseInt(gapIn, 10) || 0)
 
-  const { sheets, unplaceable } = useMemo(() => nest(W, H, gap), [W, H, gap])
-  const pieceArea = useMemo(() => expand().reduce((s, p) => s + p.w * p.h, 0), [])
+  const { sheets, unplaceable } = useMemo(() => nest(pieces, subs, W, H, gap), [pieces, subs, W, H, gap])
+  const pieceArea = useMemo(() => expand(pieces, subs).reduce((s, p) => s + p.w * p.h, 0), [pieces, subs])
   const sheetArea = sheets.length * W * H
   const waste = sheetArea ? Math.round((1 - pieceArea / sheetArea) * 100) : 0
-  const battenTotal = BATTENS.reduce((s, b) => s + b.len * b.qty, 0) * SUBS
+  const battenTotal = battens.reduce((s, b) => s + b.len * b.qty, 0) * subs
 
   const vbW = W + PAD_L + 14
   const vbH = H + PAD_T + 14
@@ -220,15 +237,7 @@ export default function CutPlan() {
       <div className="cutplan-config">
         <div className="cutplan-presets">
           {PRESETS.map((p) => (
-            <button
-              key={p.label}
-              type="button"
-              className={W === p.w && H === p.h ? 'is-on' : ''}
-              onClick={() => {
-                setWIn(String(p.w))
-                setHIn(String(p.h))
-              }}
-            >
+            <button key={p.label} type="button" className={W === p.w && H === p.h ? 'is-on' : ''} onClick={() => { setWIn(String(p.w)); setHIn(String(p.h)) }}>
               {p.label}
             </button>
           ))}
@@ -280,25 +289,41 @@ export default function CutPlan() {
         ))}
       </div>
 
-      <div className="cutplan-battens">
-        <div className="cutplan-sheet-head">
-          Tasseaux d'angle — baguettes 18 × 18 (débit séparé) · total ~{(battenTotal / 1000).toFixed(1)} m
+      {battens.length > 0 && (
+        <div className="cutplan-battens">
+          <div className="cutplan-sheet-head">
+            Tasseaux d'angle — baguettes 18 × 18 (débit séparé) · total ~{(battenTotal / 1000).toFixed(1)} m
+          </div>
+          <ul>
+            {battens.map((b) => (
+              <li key={b.name}>
+                <span className="mono">{b.qty * subs} ×</span> {b.name} — <span className="mono">{b.len} mm</span>
+              </li>
+            ))}
+          </ul>
         </div>
-        <ul>
-          {BATTENS.map((b) => (
-            <li key={b.name}>
-              <span className="mono">{b.qty * SUBS} ×</span> {b.name} — <span className="mono">{b.len} mm</span>
-            </li>
-          ))}
-        </ul>
-      </div>
+      )}
+
+      {extras.length > 0 && (
+        <div className="cutplan-battens">
+          <div className="cutplan-sheet-head">Fournitures séparées</div>
+          <ul>
+            {extras.map((e) => (
+              <li key={e}>{e}</li>
+            ))}
+          </ul>
+        </div>
+      )}
 
       <figcaption className="cutplan-note">
-        Calepinage indicatif des 2 caissons (pièces orientées pour limiter les chutes — rotation
-        autorisée). Règles de rive graduées en mm. Cercle bleu = perçage Ø349,5 du baffle ;
-        pointillés ocre = déport avant 20 mm des flancs et bouche d'évent 115 mm de la façade ;
-        diagonale = goussets (2 par carré). La liste de coupe des têtes provient du PDF Celestion (non
-        incluse).
+        {note || (
+          <>
+            Calepinage indicatif des 2 caissons (pièces orientées pour limiter les chutes — rotation
+            autorisée). Règles de rive graduées en mm. Cercle bleu = perçage Ø349,5 du baffle ;
+            pointillés ocre = déport avant 20 mm des flancs et bouche d'évent 115 mm de la façade ;
+            diagonale = goussets (2 par carré). La liste de coupe des têtes provient du PDF Celestion.
+          </>
+        )}
       </figcaption>
     </figure>
   )

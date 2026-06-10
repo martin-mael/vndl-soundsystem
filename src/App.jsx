@@ -1,4 +1,5 @@
 import { lazy, Suspense } from 'react'
+import CutPlan from './components/CutPlan.jsx'
 
 const CabinetViewer = lazy(() => import('./components/CabinetViewer.jsx'))
 
@@ -255,6 +256,9 @@ export default function App() {
                 avertissement). Le baffle reculé et la tablette d'évent servent déjà de renforts
                 transversaux des grandes faces.
               </p>
+
+              <h3>Plan de coupe (calepinage)</h3>
+              <CutPlan />
 
               <h3>Driver — Beyma 15LX60V2/S</h3>
               <div className="specgrid">

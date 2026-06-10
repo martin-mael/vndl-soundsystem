@@ -188,6 +188,52 @@ caption{caption-side:bottom;text-align:left;font-size:12px;color:var(--ink-mute)
   .viewer-stage{aspect-ratio:1/1;}
 }
 
+/* ---------- Plan de coupe ---------- */
+.cutplan{margin:18px 0 8px;}
+.cutplan-config{
+  border:1px solid var(--line);background:var(--white);padding:14px 16px;margin-bottom:12px;
+}
+.cutplan-presets{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px;}
+.cutplan-presets button{
+  font-family:var(--mono);font-size:11px;letter-spacing:.04em;
+  color:var(--ink);background:var(--paper);border:1px solid var(--ink);
+  padding:6px 10px;cursor:pointer;border-radius:2px;line-height:1;
+}
+.cutplan-presets button:hover{background:var(--paper-2);}
+.cutplan-presets button.is-on{background:var(--blue-bright);color:var(--white);border-color:var(--blue-bright);}
+.cutplan-fields{display:flex;flex-wrap:wrap;gap:16px;}
+.cutplan-fields label{
+  display:inline-flex;align-items:center;gap:8px;
+  font-family:var(--mono);font-size:12px;color:var(--ink-mute);
+}
+.cutplan-fields input{
+  width:84px;font-family:var(--mono);font-size:14px;color:var(--ink);
+  background:var(--paper);border:1px solid var(--ink);padding:6px 8px;border-radius:2px;
+}
+.cutplan-warn{
+  border-left:3px solid var(--ochre);background:var(--ochre-bg);
+  padding:10px 14px;margin:0 0 12px;font-size:13px;color:var(--ink);border-radius:0 4px 4px 0;
+}
+.cutplan-meta{
+  font-family:var(--mono);font-size:12px;color:var(--ink-mute);margin-bottom:8px;
+}
+.cutplan-scroll{
+  overflow:auto;border:1px solid var(--ink);background:var(--white);
+  max-width:100%;padding:8px;
+}
+.cutplan-sheet + .cutplan-sheet{margin-top:18px;}
+.cutplan-sheet-head{
+  font-family:var(--mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--blue);font-weight:700;margin:2px 0 6px;
+}
+.cutplan-scroll svg{display:block;background:var(--white);}
+.cutplan-battens{margin:14px 0 0;}
+.cutplan-battens ul{margin:6px 0 0;padding-left:20px;}
+.cutplan-battens li{font-size:14px;margin:0 0 4px;}
+.cutplan-note{
+  font-family:var(--mono);font-size:12px;color:var(--ink-mute);margin:8px 2px 0;max-width:72ch;
+}
+
 /* ---------- Callouts ---------- */
 .note{
   border-left:3px solid var(--ochre);background:var(--ochre-bg);

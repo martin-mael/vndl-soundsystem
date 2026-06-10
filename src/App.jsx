@@ -3,6 +3,7 @@ import CutPlan from './components/CutPlan.jsx'
 
 const CabinetViewer = lazy(() => import('./components/CabinetViewer.jsx'))
 const HeadViewer = lazy(() => import('./components/HeadViewer.jsx'))
+const RigViewer = lazy(() => import('./components/RigViewer.jsx'))
 
 // Pièces de coupe des têtes (CP 15 mm, dimensions internes du plan Celestion)
 const HEAD_PIECES = [
@@ -207,6 +208,11 @@ export default function App() {
                 mm de jeu au chargement, on peut les faire à <strong>424 mm</strong> (848 au total) —
                 le HP rentre toujours.
               </Note>
+
+              <h3>Système monté sur le plateau</h3>
+              <Suspense fallback={<div className="viewer-fallback">Chargement de la vue 3D…</div>}>
+                <RigViewer />
+              </Suspense>
             </Section>
 
             <Section id="subs" num="03" title="Subwoofers 15″">
